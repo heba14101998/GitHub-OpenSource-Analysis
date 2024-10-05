@@ -1,0 +1,35 @@
+# Scraping 
+requests==2.32.3
+beautifulsoup4==4.12.3
+# github==1.2.7
+
+
+# Data Handling and Manipulation
+pandas==2.2.2
+numpy==1.26.0
+
+# Machine Learning
+scikit-learn==1.5.2
+
+
+# Visualization
+matplotlib==3.6.0
+seaborn==0.12.0
+# bokeh==3.4.3
+# plotly==5.24.1
+WordCloud==1.9.3
+bertopic==0.16.3
+
+
+# Additional Useful Libraries
+python-dotenv==1.0.1
+tqdm==4.66.5
+ipykernel==6.29.5
+pylint==3.3.1
+autopep8==2.3.1
+# black==24.8.0
+# yapf==0.40.2
+# frictionless==5.17.1
+# ratelimit==2.2.1
+
+
