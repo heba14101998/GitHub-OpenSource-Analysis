@@ -1,60 +1,177 @@
----
+
 # Egyptian Open Source Contribution Analysis
----
 
-This project aims to analyze and visualize open source contributions from Egypt, with a specific focus on the Arabic-speaking open source community. By understanding the trends and patterns within Egyptian open source projects, we hope to:
+This repository contains the code and analysis for the Awesome-Egypt-Opensource initiative. The goal is to analyze the open source contributions from Egyptian developers, uncovering insights about their activity and trends. 
 
-* **Empower Arabic developers:** Provide valuable insights into the Egyptian open source ecosystem, helping developers identify popular technologies, active communities, and potential collaborators.
-* **Promote collaboration:**  Foster a stronger sense of community by highlighting the most active projects and developers, encouraging participation and knowledge sharing.
-* **Support Arabic language adoption:**  Demonstrate the growing adoption of Arabic in open source development, encouraging more Arabic-speaking developers to contribute.
+## Project Goals
 
-### **Project Objectives:**
+* **Encourage Open Source:**  Promote open source participation by Egyptian companies and independent engineers.
+* **Support New Developers:** Provide young developers with a path to contributing to their first open source project, offering guidance in their native language.
 
-1. **Data Collection and Quality:**
-    * Source reliable data from GitHub.
-    * Ensure completeness and accuracy of data.
-    * Exclude inactive or low-quality projects.
+## Project Objectives
 
-2. **Data Analysis and Visualization:**
-    * Analyze the geographic distribution of contributors.
-    * Identify the most popular programming languages and projects.
-    * Understand the top industries and technologies being developed.
-    * Analyze the use of frameworks and libraries within Egyptian projects.
+This project leverages GitHub data to extract valuable insights about Egyptian open source projects:
 
-3. **Tooling and Automation:**
-    * Use Python and relevant libraries for data processing and visualization.
-    * Automate data collection where possible to ensure repeatability.
+* **Top Contributing Cities:** Identify the cities with the highest concentration of open source developers.
+* **Dominant Programming Languages:** Discover the most popular programming languages used in Egyptian open source projects.
+* **Popular Projects:** Rank the top 20 Egyptian open source projects based on stars, forks, contributors, and commits.
+* **Non-Egyptian Projects with Egyptian Contributors:** Analyze the top 20 non-Egyptian projects with significant contributions from Egyptian developers.
+* **Industry Focus:** Determine the most common industry or topic areas targeted by Egyptian open source projects.
+* **Top Frameworks & Libraries:** Identify the leading frameworks and libraries employed in Egyptian open source projects.
+* **Database Usage:** Investigate the prevalence of different database engines, including both relational and NoSQL databases.
+* **Documentation Quality:** Assess the extent to which projects prioritize documentation and provide useful resources for contributors.
+* **Pull Request & Issue Activity:** Examine the distribution of open versus merged pull requests and open versus closed issues.
+* **Licensing Practices:** Analyze the top 10 licenses used in Egyptian open source projects.
+* **CI/CD Integration:** Determine the adoption rate of CI/CD tools among the projects.
 
-4. **Reporting and Documentation:**
-    * Clearly document methodologies, data sources, and limitations.
-    * Provide transparent and reproducible analysis results.
+## Structure
 
-### **Project Structure:**
+The repository is organized as follows:
 
-The project consists of several Jupyter notebooks, each focusing on a specific analysis task:
+* **`src`:** Contains the source code modules:
+    * `github_api.py`: Provides a class for interacting with the GitHub API. It is the base class for the upcomming classes.
+    * `data_collection.py`: Contains functions for scraping GitHub users and repositories.
+    * `repo_extractor.py`: Extracts repository details including files, CI/CD tools, dependencies, and database usage.
+    * `doc_assessor.py`:  Assesses the documentation quality of repositories.
+    * `utils.py`: General utility functions for the analysis notebook.
 
-* **Data Collection and Preprocessing:** Collects data from GitHub, cleanses it, and prepares it for analysis.
-* **Contributor Location Analysis:** Analyzes the geographic distribution of contributors by Egyptian city or area.
-* **Top Programming Languages Analysis:**  Identifies the most popular programming languages used in Egyptian open source projects.
-* **Top Projects Analysis:**  Identifies the most popular and active open source projects from Egypt.
-* **Non-Egyptian Projects with Egyptian Contributors:** Identifies non-Egyptian projects with significant contributions from Egyptian developers.
-* **Top Industries/Topics Analysis:**  Identifies the top industries or topics covered by Egyptian open source projects.
-* **Top Frameworks and Libraries Analysis:**  Identifies the most frequently used frameworks and libraries in Egyptian projects.
+* **`data`:** Stores raw and processed data files:
+    * `json_files`: Contains configuration files in JSON format.
+    * `raw`:  Holds scrapped data files.
+    * `processed`:  Holds processed data files that will be used in analysis.
+
+* **`results`:** Contains visualization outputs.
+* **`config.yaml`:** Stores project configuration settings.
+* **`Analyse_Egyption_OpenSource_contribution.ipynb`:**  A Jupyter notebook containing the analysis code and visualizations.
+* **`.env`:** Stores GitHub API token environment variables.
+
+## Getting Started
+
+This repository uses DVC (Data Version Control) to track data files. To get started, follow these steps:
+
+## Getting Started
+
+This repository uses DVC (Data Version Control) to track data files. To get started, follow these steps:
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/your-username/Egyptian-Open-Source-Contribution-Analysis.git
+   ```
+
+2. **Create a virtual environment (optional, but recommended):**
+   * **Using `venv` (Python's built-in virtual environment):**
+     ```bash
+     python3 -m venv .venv
+     source .venv/bin/activate  # Linux/macOS
+     .venv\Scripts\activate     # Windows
+     ```
+   * **Using `conda` (if you have Anaconda or Miniconda installed):**
+     ```bash
+     conda create -n egyptian_opensource python=3.9 # Adjust the Python version if needed
+     conda activate egyptian_opensource
+     ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Set environment variables:**
+   * Create a `.env` file in the root directory and add your GitHub Personal Access Token (PAT). 
+   * Example:
+      ```
+      PROJECT_NAME=GitHub-OpenSource-Analysis
+      GITHUB_ACCESS_TOKEN1=your_github_access_token_1
+      GITHUB_ACCESS_TOKEN2=your_github_access_token_2
+      GITHUB_ACCESS_TOKEN3=your_github_access_token_3
+      GITHUB_ACCESS_TOKEN4=your_github_access_token_4
+      ```
+5. **Initialize DVC:**
+   ```bash
+   dvc init
+   ```
+6. **Pull data files:**
+   ```bash
+   dvc pull
+   ```
+7. **Run the analysis:**
+   ```bash
+   jupyter notebook Analyse_Egyption_OpenSource_contribution.ipynb
+   ```
+
+**Note:** If you make changes to the data files, remember to use `dvc add` and `dvc commit` to track your changes.
+
+## Tools Used
+
+This analysis utilizes various tools and libraries:
+
+* **Core Libraries:**
+    * **Python:** Primary programming language.
+    * **Jupyter Notebook:** Used for data analysis, visualization, and report generation.
+    * **Pandas:** Library for data manipulation and analysis.
+    * **NumPy:** Library for numerical computation.
+    * **Requests:** Python library for making HTTP requests. 
+    * **BeautifulSoup4:** Python library for parsing HTML and XML data.
+* **Visualization Libraries:**
+    * **Matplotlib and Seaborn:** Libraries for creating static visualizations.
+    * **WordCloud:** Library for generating word clouds. 
+* **Text Processing & Topic Modeling Libraries:**
+    * **NLTK (Natural Language Toolkit):**  Used for natural language processing tasks like tokenization and stemming.
+    * **BERTopic (BERT-based Topic Modeling):**  For discovering topics within text data, particularly helpful for analyzing project descriptions
+* **Version Controlling Tools:**
+    * **Git and GitHub:**  For version control the code files and collaborative development.
+    * **DVC (Data Version Control):** Used to track data files and ensure reproducibility of analysis.
+    * **dvc-gdrive:** Python package for interacting with Google Drive as a remote storage for DVC.
+
+## Challenges Faced & Solutions
+
+This project encountered several challenges while scraping and analyzing GitHub data related to Egyptian open source projects. Here are some of the challenges and the solutions implemented:
+
+**1. GitHub API Rate Limits:**
+
+* **Challenge:**  GitHub API has rate limits, preventing excessive requests and protecting their infrastructure. This limited the speed at which we could scrape data.
+* **Solution:**  
+    * **Multiple Tokens:** We used multiple GitHub Personal Access Tokens (PATs) to increase the number of requests allowed.
+    * **Rate Limiting Logic:** Implemented logic to handle rate limiting responses (429), including waiting periods and switching tokens when necessary.
+    * **Exponential Backoff:**  Used exponential backoff to avoid making repeated requests immediately after hitting rate limits.
+
+**2. Dependency Graph Size:**
+
+* **Challenge:**  Fetching dependency information using the GitHub dependency graph API often resulted in large response per repository, mae it difficult to store and process efficiently.
+
+* **Solution:** 
+    * **Json Serialization**: Store dependencies for each repo in a seperate Json file that will be used in analysis. 
+    * **Limit Dependencies:** Limited the number of dependencies stored in the CSV file to a reasonable number (e.g., 20) to prevent excessive data storage.
+
+**3. Large Number of Repository Filenames:**
+
+* **Challenge**: Retrieving filenames from repositories with numerous files presented a significant challenge. Storing this extensive list of filenames within a single cell of a CSV file proved impractical due to potential data storage limitations and inefficient analysis.
+
+* **Solution:** We have implemented a strategy focused on **selective filename extraction**.  Instead of storing all filenames, we prioritized only those relevant to our specific analysis objectives. This involved filtering files based on their purpose, such as:
+    * Files relevant to identifying database types (e.g., `schema.sql`, `database.yml`, `knexfile.js`, etc.).
+    * Files indicating the use of CI/CD tools (e.g., `.github/workflows`, `bitbucket-pipelines.yml`, `circleci.yml`, etc.).
+    * Files that contribute to assessing documentation quality (e.g., `README.md`, `CONTRIBUTING.md`, `docs/`, etc.).
 
 
----
+**4. Handling Errors:**
+
+* **Challenge:** Errors can occur during the scraping process (e.g., network issues, API errors, data format inconsistencies). 
+* **Solution:** 
+    * **Error Handling:** Implemented comprehensive error handling mechanisms to capture and log errors gracefully. 
+    * **Retry Logic:**  Implemented retry logic to handle temporary errors, allowing the scraper to attempt requests again after a delay. 
+    * **Error Logging:**  Thorough logging of errors helped in debugging and identifying patterns in potential issues. 
+
+**By addressing these challenges, we were able to successfully gather and analyze the necessary GitHub data for the Egyptian open source contribution analysis.**
+
 ## Contributions
 
-Contributions to this project are welcome! Feel free to:
+Contributions are welcome! Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines. 
 
-* **Report issues:** If you encounter any bugs or have suggestions for improvement, please open an issue on the GitHub repository.
-* **Submit pull requests:** If you'd like to contribute code, fork the repository, make your changes, and submit a pull request.
-----
-## License
+## Acknowledgments
 
-This project is licensed under the MIT [License](https://github.com/heba14101998/GitHub-OpenSource-Analysis/LICENSE). See the LICENSE file for details.
+This project is inspired by the following resources:
 
----
-## **Contact:**
-
-If you have any questions or wish to contribute, please reach out to us at Hebamohamed14101998@gmail.com. 
+* [GitHub Innovation Graph](https://github.com/github/innovationgraph)
+* [Top GitHub Users Action](https://github.com/gayanvoice/top-github-users-action)
+* [Committers.top - Egypt](https://committers.top/egypt)
+* [xkcd 2347](https://github.com/edsu/xkcd2347) 

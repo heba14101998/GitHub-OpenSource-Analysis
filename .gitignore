@@ -1,19 +1,27 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-src/__pycache__
-*.syc
+# Ignore specific file types
+tests/
+nltk_data/
+/data
+draft*.ipynb
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
-
-
-*.log
-logs/
-data/
-*.png
+# Environment variables
 .env
 
-GitHub-OpenSource-Analysis.ipynb
+# Setup files
+.gd/
+.vscode/
+Thumbs.db
+
+# Log files
+logs/
+*.log
+
+# Temporary files and Byte-compiled files
+.ipynb_checkpoints/
+__pycache__
+*.tmp
+*.bak
+*.txt
+*.pyc
+*.py[cod
+*.zip

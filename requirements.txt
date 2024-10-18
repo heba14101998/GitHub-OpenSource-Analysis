@@ -1,35 +1,30 @@
-# Scraping 
+# Data Processing
+numpy==1.26.0
+pandas==2.2.2
+
+# Web and API
 requests==2.32.3
 beautifulsoup4==4.12.3
-# github==1.2.7
 
-
-# Data Handling and Manipulation
-pandas==2.2.2
-numpy==1.26.0
-
-# Machine Learning
-scikit-learn==1.5.2
-
-
-# Visualization
-matplotlib==3.6.0
-seaborn==0.12.0
-# bokeh==3.4.3
-# plotly==5.24.1
-WordCloud==1.9.3
+# Machine Learning and visualization
 bertopic==0.16.3
+matplotlib==3.6.0
+seaborn==0.12.2
+WordCloud==1.9.3
+pyLDAvis==3.4.1
+nltk==3.9.1
 
+# Google Cloud and GDrive Interaction
+google-api-python-client==2.149.0
+google-auth==2.35.0
+oauth2client==4.1.3
+google-auth-oauthlib==1.0.0 
+pydrive2>=1.19.0
 
-# Additional Useful Libraries
+# Development Tools
+dvc==3.55.2
 python-dotenv==1.0.1
-tqdm==4.66.5
 ipykernel==6.29.5
 pylint==3.3.1
 autopep8==2.3.1
-# black==24.8.0
-# yapf==0.40.2
-# frictionless==5.17.1
-# ratelimit==2.2.1
-
-
+tqdm==4.66.5

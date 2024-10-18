@@ -1,130 +1,250 @@
-"""
-This module is a base class for interacting with the GitHub API.
-
-    - It provides methods for making requests to the GitHub API
-    - Use rate limiting, retry logic, and error handling.
-    - It utilizes a provided GitHub token for authorization and logging to track API activity.
-"""
-
 import os
 import time
+import yaml
+import json
 import logging
+
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from dotenv import load_dotenv
 
 import requests
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 
+
 class GitHubAPI:
-    """Base class for interacting with the GitHub API."""
+    """
+    Base class for interacting with the GitHub API.
 
-    def __init__(self):
+    This class provides methods for making requests to the GitHub API and handling
+    common API errors.
+    """
 
-        # Load token from environment variable
-        load_dotenv('.env')
-        token = os.getenv("YOUR_GITHUB_TOKEN")
+    def __init__(self, config: Optional[Dict] = None) -> None:
+        """
+        Initializes the GitHubAPI class and sets up necessary configurations.
+        """
+        if config is None:
+            # Load Configuration fileif exist
+            config_path = os.path.join(os.path.dirname(
+                os.path.abspath(__file__)), '..', 'config.yaml')
+            if not os.path.exists(config_path):
+                raise FileNotFoundError(
+                    f"Configuration file not found: {config_path}")
+            with open(config_path, "r") as file:
+                self.config = yaml.safe_load(file)
 
-        if not token:
-            raise ValueError("GitHub token not provided")
+            if not self.config:
+                raise RuntimeError("Failed to load the configuration file")
+        else:
+            self.config = config
 
-        self.headers = {
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"token {token}",
-        }
+        self.tokens = self.load_tokens()
+        self.json_dir, self.raw_dir, self.draft_dir = self.create_directories()
+        self.logger = self.setup_logger()
+        self.current_token_index = 0
+        self.headers = self.setup_headers()
+        self.error_messages = self.load_error_messages()  # Load error messages from JSON
+        self.missed_rows: List[str] = []  # Initialize the missed_rows list
 
-        # Define log file name and path
-        self.log_file_path = os.path.join(
-            os.getcwd(), 'logs',
+    def load_tokens(self) -> List[str]:
+        """
+        Loads the GitHub tokens from environment variables.
+        """
+        os.environ["DOTENV_PATH"] = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), '..', '.env')
+        load_dotenv(os.environ["DOTENV_PATH"])
+
+        tokens = [
+            os.getenv('GITHUB_ACCESS_TOKEN1'),
+            os.getenv('GITHUB_ACCESS_TOKEN2'),
+            os.getenv('GITHUB_ACCESS_TOKEN3'),
+            os.getenv('GITHUB_ACCESS_TOKEN4')
+        ]
+
+        # Ensure at least one valid token is loaded
+        if not any(tokens):
+            raise RuntimeError("GitHub tokens not found")
+
+        return tokens
+
+    def create_directories(self) -> tuple:
+        """
+        Creates necessary directories for storing data.
+        """
+        os.makedirs(self.config.get("DATA_DIR", "data"), exist_ok=True)
+        os.makedirs(self.config.get("LOG_DIR", "logs"), exist_ok=True)
+
+        json_dir = os.path.join(self.config.get(
+            "DATA_DIR", "data"), "json_files")
+        raw_dir = os.path.join(self.config.get("DATA_DIR", "data"), "raw")
+        draft_dir = os.path.join(self.config.get("DATA_DIR", "data"), "draft")
+
+        os.makedirs(json_dir, exist_ok=True)
+        os.makedirs(raw_dir, exist_ok=True)
+        os.makedirs(draft_dir, exist_ok=True)
+
+        return json_dir, raw_dir, draft_dir
+
+    def setup_logger(self) -> logging.Logger:
+        """
+        Sets up the logger for the GitHub API.
+        """
+        if not self.config["LOG_DIR"]:
+            raise ValueError("LOGS_DIR is not set")
+
+        log_file_path = os.path.join(
+            os.getcwd(), self.config["LOG_DIR"],
             f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
         )
-        self.logger = self._setup_logger()
-
-    def _setup_logger(self) -> logging.Logger:
-        """Sets up the logger for the GitHub API."""
-
-        os.makedirs(os.path.dirname(self.log_file_path), exist_ok=True)
 
         # Configure basic logging setup
         logging.basicConfig(
-            filename=self.log_file_path,
-            format='[%(asctime)s] - %(levelname)s - %(lineno)d - %(message)s',
-            level=logging.INFO,
+            filename=log_file_path,
+            format="%(asctime)s - %(levelname)s - %(lineno)d - %(message)s",
+            level=logging.INFO  # Set level to DEBUG for detailed logging
         )
 
         return logging.getLogger(__name__)
 
-    def _create_retry_session(self) -> requests.Session:
-        """Creates a requests session with retry capabilities."""
+    def setup_headers(self) -> Dict[str, str]:
+        """
+        Sets up the headers for API requests.
+        """
+        return {
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"token {self.tokens[self.current_token_index]}",
+        }
 
-        retries = Retry(
-            total=5,
-            status_forcelist=[429, 500, 502, 503, 504],
-            backoff_factor=0.2,  # Wait exponentially longer
+    def load_error_messages(self) -> Dict:
+        """
+        Loads the error messages from a JSON file.
+        """
+        error_messages_path = os.path.join(
+            self.json_dir, "error_messages.json")
+
+        # Load the error messages from the JSON file
+        if os.path.exists(error_messages_path):
+            with open(error_messages_path, "r") as json_file:
+                return json.load(json_file)
+        else:
+            raise FileNotFoundError(
+                f"Error messages file not found: {error_messages_path}")
+
+    def create_retry_session(self) -> requests.Session:
+        """
+        Creates a requests session with retry capabilities.
+        """
+        retry_config = Retry(
+            total=self.config["RETRY_NUM"],
+            backoff_factor=self.config["RETRY_FACTOR"],
+            status_forcelist={429, 500, 502, 503, 504},
             respect_retry_after_header=True,
-            raise_on_status=False
+            raise_on_status=False,
         )
-        adapter = HTTPAdapter(max_retries=retries)
-        http = requests.Session()
-        http.mount("https://", adapter)
-        http.mount("http://", adapter)
+        adapter = HTTPAdapter(max_retries=retry_config)
+        session = requests.Session()
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
 
-        return http
+        return session
 
-    def _handle_api_errors(
-            self,
-            response: requests.Response) -> Optional[Dict]:
-        """Handles common API errors, returns data if successful."""
+    def switch_token(self):
+        """
+        Switches to the next token in the list of GitHub tokens.
+        """
+        # Use modulo operation to cycle through tokens
+        if len(self.tokens) > 1:
+            self.current_token_index = (
+                self.current_token_index + 1) % len(self.tokens)
+            self.headers["Authorization"] = f"token {self.tokens[self.current_token_index]}"
+            self.logger.info("Switched to token %s",
+                             self.tokens[self.current_token_index])
+        else:
+            self.logger.warning("No additional tokens to switch to.")
 
+    def handle_api_errors(self, response: requests.Response) -> Optional[Dict]:
+        """
+        Handles common API errors, returns data if successful.
+        """
         if response.status_code == 200:
             return response.json()
 
-        elif response.status_code == 403:
-            wait_time = (
-                int(response.headers["X-RateLimit-Reset"]) - time.time()) / 60
-            self.logger.warning(
-                "Rate limit exceeded! Please wait and try again after :%s minutes.",
-                int(wait_time))
-            return None
+        if response.status_code in [403, 429]:
+            reset_time = int(response.headers.get(
+                "X-RateLimit-Reset", 0)) - int(time.time())
+            if reset_time > 0:
+                self.logger.warning(
+                    "Error 403: Rate limit exceeded! We need to slow down. "
+                    "Please wait for %s seconds until the rate limit resets.",
+                    reset_time
+                )
+                self.switch_token()
+                return None
 
-        elif response.status_code == 404:
-            self.logger.error("Error 404: Resource not found.")
-            return None
-
-        elif response.status_code == 451:
-            self.logger.error(
-                "Error %s Unavailable For Legal Reasons.",
-                response.status_code
-            )
-            return None
-
-        elif response.status_code == 401:
-            self.logger.error("Unauthorized (401) - Check your GitHub token.")
-            return None
-
-        elif response.status_code == 204:
-            self.logger.info(
-                "HTTP 204 - No Content. This could be expected, but investigate."
-            )
-            return None
-
-        elif response.status_code == 409:
-            self.logger.error(
-                "HTTP 409 - Conflict. This often means a resource exists but "
-                "should not or already has an operation running on it."
-            )
-            return None
-
-        else:
-            self.logger.error("Error fetching data: %s", response.status_code)
-            return None
+        msg = self.error_messages.get(
+            response.status_code, f"Error fetching data: {response.status_code}")
+        self.logger.error(msg)
+        return None
 
     def _get(self, url: str, params: Optional[Dict] = None) -> Optional[Dict]:
-        """Makes a GET request to the GitHub API."""
+        """
+        Makes a GET request to the GitHub API.
+        """
+        session = self.create_retry_session()
+        response = session.get(url, headers=self.headers, params=params)
 
-        http = self._create_retry_session()
+        if response is None:
+            self.logger.error("Failed to make request to %s", url)
+            return None
 
-        response = http.get(url, headers=self.headers, params=params)
-        
-        return self._handle_api_errors(response)
+        result = self.handle_api_errors(response)
+        if result is None:
+            self.logger.error("Request to %s failed", url)
+
+        return result
+
+    def get_profile(self, username: str, location: Optional[str] = None) -> Optional[Dict]:
+        """
+        Retrieves a GitHub user's profile information.
+        """
+        contrib_url = f"{self.config['API_BASE_URL']}/users/{username}"
+        params = {"location": location} if location else None
+        user_data = self._get(contrib_url, params)
+
+        if user_data:
+            self.logger.info(
+                "Retrieved user profile for %s: %s", username, user_data)
+            return user_data
+
+        return None
+
+    def get_repo_details(self, repo: Dict) -> Optional[Dict]:
+        """
+        Retrieves details of a specific GitHub repository.
+        """
+        try:
+            repo_url = repo['url']
+            repo_details = {
+                "repo_name": repo['name'],
+                "owner": repo['owner']['login'],
+                "url": repo_url,
+                "description": repo.get('description', ''),
+                "language": repo.get('language', ''),
+                "stars": repo.get('stargazers_count', -1),
+                "forks": repo.get('forks_count', -1),
+                "issues": repo.get('open_issues_count', -1),
+                "created_at": repo.get('created_at', ''),
+                "updated_at": repo.get('updated_at', '')
+            }
+
+            self.logger.info("Retrieved repository details for %s/%s: \n%s",
+                             repo_details["owner"], repo_details["repo_name"], repo_details)
+            return repo_details
+
+        except KeyError as e:
+            self.logger.error("Missing key in repository details: %s", e)
+        except Exception as e:
+            self.logger.error(
+                "An error occurred while retrieving repository details: %s", e)
